@@ -22,9 +22,8 @@ If you prefer running directly with your Linux HolyC compiler:
 holyc src/holymon.c
 ```
 
-## Banned Applications List
-- Browsers: Chrome, Chromium, Brave, Edge, Opera, Vivaldi
+## Banned App List
+- Browsers: Chrome, Chromium, Brave, Opera, Vivaldi
 - Chat: Discord, Slack, Teams, Element, Signal, WhatsApp, Telegram
 - Editors/Tools: VS Code, Postman, Insomnia, GitKraken, Obsidian, Logseq
 - Media/Productivity: Spotify, Notion, Figma, Trello, Steam
-- 
