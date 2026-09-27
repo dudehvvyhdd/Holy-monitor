@@ -13,17 +13,8 @@ cd holy-monitor
 chmod +x install.sh
 ./install.sh
 ```
-
-## Manual Execution
-
-If you prefer running directly with your Linux HolyC compiler:
+Once installed just use the command: 
 
 ```bash
-holyc src/holymon.c
+holy-monitor
 ```
-
-## Banned App List
-- Browsers: Chrome, Chromium, Brave, Opera, Vivaldi
-- Chat: Discord, Slack, Teams, Element, Signal, WhatsApp, Telegram
-- Editors/Tools: VS Code, Postman, Insomnia, GitKraken, Obsidian, Logseq
-- Media/Productivity: Spotify, Notion, Figma, Trello, Steam
