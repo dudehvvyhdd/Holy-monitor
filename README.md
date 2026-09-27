@@ -8,7 +8,7 @@ System sanctity monitor written in HolyC for Linux. Monitors active system tasks
 Clone the repository and run the installer script:
 
 ```bash
-git clone https://github.com/ollipix/holy-monitor.git
+git clone https://github.com/ollipix/Holy-monitor.git
 cd holy-monitor
 chmod +x install.sh
 ./install.sh
