@@ -1,7 +1,10 @@
+<p align="center">
+  <img src="hm.png" alt="Holy Monitor" width="256">
+</p>
 
 # Holy Monitor
 
-System sanctity monitor written in HolyC for Linux. Monitors active system tasks for bloated Electron apps and spyware, automatically enforcing divine judgment when your sanctity drops to zero.
+System sanctity monitor written in HolyC. Monitors active system tasks for bloated Electron apps and spyware, automatically enforcing divine judgment when your sanctity drops to zero.
 
 ## Installation
 
