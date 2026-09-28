@@ -19,5 +19,5 @@ chmod +x install.sh
 Once installed just use the command: 
 
 ```bash
-holy-monitor
+./holy-monitor
 ```
