@@ -21,3 +21,6 @@ Once installed just use the command:
 ```bash
 holy-monitor
 ```
+<p align="center">
+  <img src="hm2.png" alt="Holy Monitor 2" width="256">
+</p>
