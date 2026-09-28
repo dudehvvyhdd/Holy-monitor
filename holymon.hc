@@ -155,13 +155,14 @@ static void Cleanup(int sig)
 #endif
 
 #define MAX_HOLY     100
-#define METER_WIDTH  68
+#define METER_WIDTH  72
 #define POLL_TIME    300
 #define WIN_X        2
 #define WIN_Y        1
-#define WIN_W        100
-#define WIN_H        32
+#define WIN_W        105
+#define WIN_H        36
 #define NAPPS        24
+#define BAR_H        11
 
 #define PS_CMD   "ps -eo comm= > $HOME/.holymon.tmp 2>/dev/null"
 #define PS_FILE  "~/.holymon.tmp"
@@ -197,6 +198,9 @@ I64 start_time    = 0;
 I64 counts[NAPPS];
 I64 history[METER_WIDTH];
 U8  blank[WIN_W];
+
+I64 prev_user = 0, prev_nice = 0, prev_sys = 0, prev_idle = 0;
+I64 cpu_pct = 0, mem_pct = 0, gpu_pct = 0;
 
 U0 At(I64 row, I64 col)
 {
@@ -267,16 +271,114 @@ U0 DrawShell()
 {
     DrawSides();
     Rule(0,  "╔", "═", "╗", "HOLY SYSTEM MONITOR");
-    Rule(4,  "╟", "─", "╢", "DETECTED PROCESSES");
-    Rule(19, "╟", "─", "╢", "SYSTEM SANCTITY");
-    Rule(25, "╟", "─", "╢", "PURGE METRICS");
+    Rule(4,  "╟", "─", "╢", "DETECTED PROCESSES & HARDWARE METRICS");
+    Rule(21, "╟", "─", "╢", "RING 0 SANCTITY");
+    Rule(28, "╟", "─", "╢", "SYSTEM TELEMETRY & SMITE METRICS");
     Rule(WIN_H - 1, "╚", "═", "╝", NULL);
 }
 
 U0 DrawHeader()
 {
-    Centered(2, C_TITLE, "+  T E M P L E  P R O C E S S  G U A R D  +");
-    Centered(3, C_LABEL, "TempleOS Native Environment Monitor");
+    Centered(2, C_TITLE, "TEMPLE NATIVE PROCESS GUARD & SYSTEM METRICS");
+    Centered(3, C_LABEL, "640x480 16-Color Pure Resolution Architecture");
+}
+
+U0 ReadHardwareMetrics()
+{
+    FILE *f;
+    I64 u, n, s, i, total, diff_total, diff_idle, active;
+    I64 mem_total = 0, mem_avail = 0;
+    U8 buf[256];
+
+    f = fopen("/proc/stat", "r");
+    if (f) {
+        if (fscanf(f, "cpu %ld %ld %ld %ld", &u, &n, &s, &i) == 4) {
+            total = u + n + s + i;
+            diff_total = total - (prev_user + prev_nice + prev_sys + prev_idle);
+            diff_idle = i - prev_idle;
+            if (diff_total > 0)
+                cpu_pct = 100 * (diff_total - diff_idle) / diff_total;
+            prev_user = u; prev_nice = n; prev_sys = s; prev_idle = i;
+        }
+        fclose(f);
+    }
+
+    f = fopen("/proc/meminfo", "r");
+    if (f) {
+        while (fgets(buf, sizeof(buf), f)) {
+            if (sscanf(buf, "MemTotal: %ld kB", &u) == 1) mem_total = u;
+            if (sscanf(buf, "MemAvailable: %ld kB", &u) == 1) mem_avail = u;
+        }
+        fclose(f);
+        if (mem_total > 0)
+            mem_pct = 100 * (mem_total - mem_avail) / mem_total;
+    }
+
+    f = popen("nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null", "r");
+    if (f) {
+        if (fgets(buf, sizeof(buf), f)) {
+            active = atoi(buf);
+            if (active >= 0 && active <= 100)
+                gpu_pct = active;
+        }
+        pclose(f);
+    }
+}
+
+U0 DrawVerticalBars()
+{
+    I64 h, lvl_cpu, lvl_gpu, lvl_mem;
+
+    lvl_cpu = cpu_pct * BAR_H / 100;
+    lvl_gpu = gpu_pct * BAR_H / 100;
+    lvl_mem = mem_pct * BAR_H / 100;
+
+    At(5, 78);
+    Print(C_TITLE);
+    Print("CPU   GPU   RAM");
+
+    for (h = 0; h < BAR_H; h++) {
+        I64 idx = BAR_H - 1 - h;
+        At(6 + h, 77);
+
+        if (idx < lvl_cpu) {
+            if (idx >= 8) Print(C_BAD);
+            else if (idx >= 4) Print(C_WARN);
+            else Print(C_GOOD);
+            Print("█ ");
+        } else {
+            Print(C_DIM);
+            Print("░ ");
+        }
+
+        Print("   ");
+
+        if (idx < lvl_gpu) {
+            if (idx >= 8) Print(C_BAD);
+            else if (idx >= 4) Print(C_WARN);
+            else Print(C_GOOD);
+            Print("█ ");
+        } else {
+            Print(C_DIM);
+            Print("░ ");
+        }
+
+        Print("   ");
+
+        if (idx < lvl_mem) {
+            if (idx >= 8) Print(C_BAD);
+            else if (idx >= 4) Print(C_WARN);
+            else Print(C_GOOD);
+            Print("█");
+        } else {
+            Print(C_DIM);
+            Print("░");
+        }
+    }
+
+    At(18, 76);
+    Print(C_WHITE);
+    Print("%3d%%  %3d%%  %3d%%", cpu_pct, gpu_pct, mem_pct);
 }
 
 U0 MatchApp(U8 *comm)
@@ -354,45 +456,49 @@ U0 DrawActiveApps()
 {
     I64 i, row = 5, col = 0, displayed = 0;
 
-    for (i = 0; i < 13; i++) {
-        ClearLine(5 + i);
+    for (i = 0; i < 15; i++) {
+        At(5 + i, 2);
+        Print("                                                                 ");
     }
 
     for (i = 0; i < NAPPS; i++) {
         if (counts[i] > 0) {
-            At(row, 4 + col * 24);
+            At(row, 4 + col * 22);
             Print(C_BADBLINK);
             Print("x ");
             Print(C_BAD);
-            Print("%-15s", unholy_apps[i]);
+            Print("%-13s", unholy_apps[i]);
             Print(C_WARN);
             Print("x%-2d", counts[i]);
             Print(C_RESET);
 
             displayed++;
             row++;
-            if (row >= 18) {
+            if (row >= 19) {
                 row = 5;
                 col++;
-                if (col >= 4)
+                if (col >= 3)
                     break;
             }
         }
     }
 
     if (displayed == 0) {
-        Centered(11, C_GOOD, "No target processes active.");
+        At(11, 22);
+        Print(C_GOOD);
+        Print("No unholy CIA processes active.");
+        Print(C_RESET);
     }
 }
 
 U0 DrawMeter(I64 active)
 {
     I64 i, filled, lvl;
-    U8 buf[96];
+    U8 buf[128];
 
     filled = holy_score * METER_WIDTH / MAX_HOLY;
 
-    At(20, 4);
+    At(22, 4);
     Print(C_LABEL);
     Print("SANCTITY  ");
     Print(C_BORDER);
@@ -422,7 +528,7 @@ U0 DrawMeter(I64 active)
     Print("%3d%%", holy_score);
     Print(C_RESET);
 
-    At(21, 4);
+    At(23, 4);
     Print(C_LABEL);
     Print("HISTORY   ");
     Print(C_BORDER);
@@ -439,18 +545,23 @@ U0 DrawMeter(I64 active)
     }
     Print(C_RESET);
 
-    ClearLine(23);
+    ClearLine(25);
+    ClearLine(26);
 
     if (active > 0) {
-        StrPrint(buf, "WARNING: %d TARGET PROCESS(ES) ACTIVE", active);
-        Centered(23, C_BADBLINK, buf);
+        StrPrint(buf, "Smiting all unholy apps... [%d active process(es)]", active);
+        Centered(25, C_BADBLINK, buf);
     } else {
-        if (holy_score > 66)
-            Centered(23, C_GOOD, "STATUS: Clean environment.");
-        else if (holy_score > 33)
-            Centered(23, C_WARN, "STATUS: Degrading -- purge recommended.");
+        if (holy_score == MAX_HOLY)
+            Centered(25, C_GOOD, "God's lonely programmer is smiling.");
+        else if (holy_score > 75)
+            Centered(25, C_GOOD, "Ring 0 intact. Operating in full divine isolation.");
+        else if (holy_score > 50)
+            Centered(25, C_WARN, "Sanctity recovering. Purging lingering memory allocations.");
+        else if (holy_score > 25)
+            Centered(25, C_WARN, "Severe overhead detected. Foreign instruction sequences pending smite.");
         else
-            Centered(23, C_BAD, "STATUS: Critical -- purge imminent.");
+            Centered(25, C_BAD, "Critical integrity loss. Auto-purge sequence engaged.");
     }
 }
 
@@ -460,49 +571,83 @@ U0 DrawStats(I64 active)
 
     up = tS - start_time;
 
-    At(26, 4);
+    At(29, 4);
     Print(C_LABEL);
     Print("UPTIME         ");
     Print(C_WHITE);
     Print("%02d:%02d:%02d", up / 3600, (up / 60) % 60, up % 60);
 
-    At(26, 36);
+    At(29, 38);
     Print(C_LABEL);
     Print("ACTIVE TARGETS ");
     Print(C_WHITE);
     Print("%-3d", active);
 
-    At(26, 68);
+    At(29, 72);
     Print(C_LABEL);
-    Print("PURGES         ");
+    Print("TOTAL PURGES   ");
     Print(C_WHITE);
     Print("%-4d", purge_count);
 
-    At(27, 4);
+    At(30, 4);
     Print(C_LABEL);
-    Print("KILLED PROCS   ");
+    Print("SMITTEN PROCS  ");
     Print(C_WHITE);
     Print("%-6d", souls_smitten);
 
-    At(27, 36);
+    At(30, 38);
     Print(C_LABEL);
-    Print("PEAK TARGETS   ");
+    Print("PEAK HERESY    ");
     Print(C_WHITE);
     Print("%-3d", peak_heresy);
 
-    At(27, 68);
+    At(30, 72);
     Print(C_LABEL);
     Print("MIN SANCTITY   ");
     Print(C_WHITE);
     Print("%d%%  ", lowest_score);
+
+    At(31, 4);
+    Print(C_LABEL);
+    Print("LOAD STATE     ");
+    if (cpu_pct > 80 || mem_pct > 80) {
+        Print(C_BAD);
+        Print("HEAVY SYSTEM LOAD");
+    } else if (cpu_pct > 40 || mem_pct > 40) {
+        Print(C_WARN);
+        Print("MODERATE ACTIVITY");
+    } else {
+        Print(C_GOOD);
+        Print("NOMINAL OPERATIONAL");
+    }
+
+    At(31, 38);
+    Print(C_LABEL);
+    Print("MEMORY STATUS  ");
+    if (mem_pct > 85) {
+        Print(C_BAD);
+        Print("RAM PRESSURE HIGH");
+    } else {
+        Print(C_GOOD);
+        Print("ALLOCATION CLEAN");
+    }
+
+    At(31, 72);
+    Print(C_LABEL);
+    Print("COMPILER MODE  ");
+    Print(C_WHITE);
+    Print("HOLYC DIRECT");
+
     Print(C_RESET);
 
-    Centered(29, C_DIM, "Ctrl+C to exit -- In memoriam: Terry A. Davis (1969-2018)");
+    Centered(34, C_DIM, "In memory of Terry A. Davis (1969-2018) -- An absolute legend.");
 }
 
 U0 Render(I64 active)
 {
+    ReadHardwareMetrics();
     DrawActiveApps();
+    DrawVerticalBars();
     DrawMeter(active);
     DrawStats(active);
 }
@@ -525,16 +670,16 @@ U0 Purge()
 
     Print("\x1b[2J");
     DrawSides();
-    Rule(0, "╔", "═", "╗", "SYSTEM PURGE IN PROGRESS");
+    Rule(0, "╔", "═", "╗", "DIVINE PURGE IN PROGRESS");
     Rule(WIN_H - 1, "╚", "═", "╝", NULL);
-    Centered(2, C_BADBLINK, "TERMINATING TARGET PROCESSES");
+    Centered(2, C_BADBLINK, "SMITING UNHOLY PROCESSES");
     Sleep(300);
 
     for (i = 0; i < NAPPS; i++) {
         if (counts[i] > 0) {
-            At(5 + line % 20, 6 + (line / 20) * 44);
+            At(5 + line % 22, 6 + (line / 22) * 48);
             Print(C_BAD);
-            Print("[!] TERMINATED: ");
+            Print("[!] SMITTEN: ");
             Print(C_WHITE);
             Print("%-16s", unholy_apps[i]);
             Print(C_DIM);
@@ -551,7 +696,7 @@ U0 Purge()
         }
     }
 
-    Centered(27, C_GOOD, "Target processes terminated. Sanctity restored.");
+    Centered(30, C_GOOD, "Unholy processes smitten. Ring 0 sanctity restored.");
     purge_count++;
     Sleep(1800);
 
