@@ -161,7 +161,6 @@ static void Cleanup(int sig)
 #define WIN_Y        2
 #define WIN_W        76
 #define WIN_H        24
-#define GRID_ROWS    8
 #define NAPPS        24
 
 #define PS_CMD   "ps -eo comm= > $HOME/.holymon.tmp 2>/dev/null"
@@ -210,6 +209,12 @@ U0 Rep(U8 *s, I64 n)
 
     for (i = 0; i < n; i++)
         Print("%s", s);
+}
+
+U0 ClearLine(I64 row)
+{
+    At(row, 1);
+    Print("%s", blank);
 }
 
 U0 Rule(I64 row, U8 *l, U8 *fill, U8 *r, U8 *label)
@@ -261,17 +266,17 @@ U0 DrawSides()
 U0 DrawShell()
 {
     DrawSides();
-    Rule(0,  "╔", "═", "╗", "HOLY MONITOR (ETERNAL)");
-    Rule(4,  "╟", "─", "╢", "MONITORED HERESIES");
-    Rule(13, "╟", "─", "╢", "SANCTITY");
-    Rule(18, "╟", "─", "╢", "JUDGMENT RECORDS");
+    Rule(0,  "╔", "═", "╗", "HOLY MONITOR (DIVINE RING 0)");
+    Rule(4,  "╟", "─", "╢", "ACTIVE CIA HERESIES");
+    Rule(13, "╟", "─", "╢", "TEMPLE SANCTITY");
+    Rule(18, "╟", "─", "╢", "DIVINE JUDGMENT RECORDS");
     Rule(WIN_H - 1, "╚", "═", "╝", NULL);
 }
 
 U0 DrawHeader()
 {
-    Centered(2, C_TITLE, "+  T E M P L E   O F   T H E   P R O C E S S   G U A R D  +");
-    Centered(3, C_LABEL, "God's third temple  -  640x480  -  16 colours  -  no distractions");
+    Centered(2, C_TITLE, "+  T E M P L E  O F  T H E  P R O C E S S  G U A R D  +");
+    Centered(3, C_LABEL, "God's Third Temple - 640x480 - 16 Colors - No CIA Distractions");
 }
 
 U0 MatchApp(U8 *comm)
@@ -345,27 +350,39 @@ U0 RestoreHoliness()
         holy_score = MAX_HOLY;
 }
 
-U0 DrawGrid()
+U0 DrawActiveApps()
 {
-    I64 i, col, row;
+    I64 i, row = 5, col = 0, displayed = 0;
+
+    for (i = 0; i < 8; i++) {
+        ClearLine(5 + i);
+    }
 
     for (i = 0; i < NAPPS; i++) {
-        col = i / GRID_ROWS;
-        row = i % GRID_ROWS;
-        At(5 + row, 3 + col * 24);
-
         if (counts[i] > 0) {
+            At(row, 3 + col * 24);
+            Print(C_BADBLINK);
+            Print("x ");
             Print(C_BAD);
-            Print("● %-16s", unholy_apps[i]);
+            Print("%-16s", unholy_apps[i]);
             Print(C_WARN);
             Print("x%-2d", counts[i]);
-        } else {
-            Print(C_GOOD);
-            Print("○ ");
-            Print(C_DIM);
-            Print("%-16s", unholy_apps[i]);
+            Print(C_RESET);
+
+            displayed++;
+            row++;
+            if (row >= 13) {
+                row = 5;
+                col++;
+                if (col >= 3)
+                    break;
+            }
         }
-        Print(C_RESET);
+    }
+
+    if (displayed == 0) {
+        Centered(8, C_GOOD, "No unholy CIA processes active. Pure Temple environment!");
+        Centered(9, C_DIM, "God's divine compiler runs without distraction.");
     }
 }
 
@@ -423,17 +440,20 @@ U0 DrawMeter(I64 active)
     }
     Print(C_RESET);
 
+    ClearLine(16);
+    ClearLine(17);
+
     if (active > 0) {
-        StrPrint(buf, "!! THEY ARE WATCHING  -  %d UNHOLY APP(S) DETECTED !!", active);
+        StrPrint(buf, "!! THEY ARE WATCHING - %d UNHOLY CIA APP(S) DETECTED !!", active);
         Centered(16, C_BADBLINK, buf);
     }
 
     if (holy_score > 66)
         Centered(17, C_GOOD, "STATUS: Pure Temple. God's lonely programmer smiles.");
     else if (holy_score > 33)
-        Centered(17, C_WARN, "STATUS: Terry Davis would not approve.");
+        Centered(17, C_WARN, "STATUS: CIA glowing in the dark! Terry Davis demands a purge!");
     else
-        Centered(17, C_BAD, "STATUS: Await your divine judgment!");
+        Centered(17, C_BAD, "STATUS: Heresy critical! Prepare the holy HolyC smite!");
 }
 
 U0 DrawStats(I64 active)
@@ -444,7 +464,7 @@ U0 DrawStats(I64 active)
 
     At(19, 3);
     Print(C_LABEL);
-    Print("UPTIME         ");
+    Print("TEMPLE UPTIME  ");
     Print(C_WHITE);
     Print("%02d:%02d:%02d", up / 3600, (up / 60) % 60, up % 60);
 
@@ -456,7 +476,7 @@ U0 DrawStats(I64 active)
 
     At(19, 50);
     Print(C_LABEL);
-    Print("PURGES         ");
+    Print("HOLY PURGES    ");
     Print(C_WHITE);
     Print("%-4d", purge_count);
 
@@ -479,14 +499,12 @@ U0 DrawStats(I64 active)
     Print("%d%%  ", lowest_score);
     Print(C_RESET);
 
-    Centered(22, C_DIM, "Ctrl+C to depart the temple  -  In memoriam: Terry A. Davis (1969-2018)");
+    Centered(22, C_DIM, "Ctrl+C to depart the temple - In memoriam: Terry A. Davis (1969-2018)");
 }
 
 U0 Render(I64 active)
 {
-    DrawShell();
-    DrawHeader();
-    DrawGrid();
+    DrawActiveApps();
     DrawMeter(active);
     DrawStats(active);
 }
@@ -509,16 +527,16 @@ U0 Purge()
 
     Print("\x1b[2J");
     DrawSides();
-    Rule(0, "╔", "═", "╗", "DIVINE JUDGMENT REACHED");
+    Rule(0, "╔", "═", "╗", "DIVINE SMITE: RING 0 PURGE");
     Rule(WIN_H - 1, "╚", "═", "╝", NULL);
-    Centered(2, C_BADBLINK, "PURGING ALL HERESY!");
+    Centered(2, C_BADBLINK, "PURGING ALL GLOWING HERESY FROM TEMPLE MEMORY!");
     Sleep(300);
 
     for (i = 0; i < NAPPS; i++) {
         if (counts[i] > 0) {
             At(5 + line % 14, 4 + (line / 14) * 36);
             Print(C_BAD);
-            Print("[!] PURGED: ");
+            Print("[!] SMITTEN: ");
             Print(C_WHITE);
             Print("%-16s", unholy_apps[i]);
             Print(C_DIM);
@@ -535,7 +553,7 @@ U0 Purge()
         }
     }
 
-    Centered(20, C_GOOD, "All unholy processes smitten. Sanctity restored!");
+    Centered(20, C_GOOD, "All unholy agents smitten by divine order. Sanctity restored!");
     purge_count++;
     Sleep(1800);
 
@@ -544,6 +562,8 @@ U0 Purge()
         history[i] = MAX_HOLY;
 
     Print("\x1b[2J");
+    DrawShell();
+    DrawHeader();
 }
 
 U0 HolyMon()
@@ -559,6 +579,9 @@ U0 HolyMon()
 
     start_time = tS;
     Print("\x1b[?1049h\x1b[?25l\x1b[2J\x1b[H");
+
+    DrawShell();
+    DrawHeader();
 
     while (TRUE) {
         active = ScanProcesses();
