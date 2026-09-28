@@ -12,7 +12,7 @@ Clone the repository and run the installer script:
 
 ```bash
 git clone https://github.com/ollipix/Holy-monitor.git
-cd holy-monitor
+cd Holy-monitor
 chmod +x install.sh
 ./install.sh
 ```
