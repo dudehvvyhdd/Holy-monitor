@@ -30,11 +30,11 @@ static void FixFmt(const char *in, char *out, size_t max)
             if (*in == '%') {
                 out[o++] = *in++;
             } else {
-                while (*in && strchr("-+ #0123456789.", *in))
+                while (*in && strchr("-+ #0123456789.", *in) && o + 2 < max)
                     out[o++] = *in++;
-                if (*in == 'd')
+                if (*in == 'd' && o + 1 < max)
                     out[o++] = 'l';
-                if (*in)
+                if (*in && o + 1 < max)
                     out[o++] = *in++;
             }
         } else {
@@ -55,14 +55,14 @@ static void Print(const char *fmt, ...)
     va_end(ap);
 }
 
-static void StrPrint(char *dst, const char *fmt, ...)
+static void StrPrint(char *dst, size_t dst_size, const char *fmt, ...)
 {
     char f[512];
     va_list ap;
 
     FixFmt(fmt, f, sizeof(f));
     va_start(ap, fmt);
-    vsnprintf(dst, 256, f, ap);
+    vsnprintf(dst, dst_size, f, ap);
     va_end(ap);
 }
 
@@ -89,47 +89,6 @@ static I64 StrLen(const char *s)
 static I64 StrNICmp(const char *a, const char *b, I64 n)
 {
     return strncasecmp(a, b, (size_t)n);
-}
-
-static char *FileRead(const char *name, I64 *size)
-{
-    char path[512];
-    const char *home;
-    FILE *f;
-    char *buf;
-    long n;
-
-    home = getenv("HOME");
-    if (name[0] == '~' && name[1] == '/' && home)
-        snprintf(path, sizeof(path), "%s%s", home, name + 1);
-    else
-        snprintf(path, sizeof(path), "%s", name);
-
-    f = fopen(path, "rb");
-    if (!f)
-        return NULL;
-
-    fseek(f, 0, SEEK_END);
-    n = ftell(f);
-    rewind(f);
-    if (n < 0) {
-        fclose(f);
-        return NULL;
-    }
-
-    buf = malloc((size_t)n + 1);
-    if (!buf) {
-        fclose(f);
-        return NULL;
-    }
-
-    n = (long)fread(buf, 1, (size_t)n, f);
-    buf[n] = '\0';
-    fclose(f);
-
-    if (size)
-        *size = n;
-    return buf;
 }
 
 #define Free(p) free(p)
@@ -164,8 +123,7 @@ static void Cleanup(int sig)
 #define GRID_ROWS    8
 #define NAPPS        24
 
-#define PS_CMD   "ps -eo comm= > $HOME/.holymon.tmp 2>/dev/null"
-#define PS_FILE  "~/.holymon.tmp"
+#define PS_CMD  "ps -eo comm= 2>/dev/null"
 
 #define C_RESET     "\x1b[0m"
 #define C_BORDER    "\x1b[36;1m"
@@ -271,7 +229,6 @@ U0 DrawShell()
 U0 DrawHeader()
 {
     Centered(2, C_TITLE, "+  T E M P L E   O F   T H E   P R O C E S S   G U A R D  +");
-    Centered(3, C_LABEL, "God's third temple  -  640x480  -  16 colours  -  no distractions");
 }
 
 U0 MatchApp(U8 *comm)
@@ -292,34 +249,28 @@ U0 MatchApp(U8 *comm)
 
 I64 ScanProcesses()
 {
-    U8 *buf, *p, line[64];
-    I64 i, n, size, apps = 0;
+    FILE *fp;
+    U8 line[128];
+    I64 i, apps = 0;
 
     for (i = 0; i < NAPPS; i++)
         counts[i] = 0;
 
-    System(PS_CMD);
-    buf = FileRead(PS_FILE, &size);
-    if (!buf)
+#ifndef HOLYC_NATIVE
+    fp = popen(PS_CMD, "r");
+    if (!fp)
         return 0;
 
-    p = buf;
-    while (*p) {
-        n = 0;
-        while (*p && *p != '\n') {
-            if (n < 63) {
-                line[n] = *p;
-                n++;
-            }
-            p++;
-        }
-        line[n] = 0;
-        if (*p == '\n')
-            p++;
+    while (fgets(line, sizeof(line), fp)) {
+        // Strip trailing newline
+        size_t len = strlen(line);
+        if (len > 0 && line[len - 1] == '\n')
+            line[len - 1] = '\0';
 
         MatchApp(line);
     }
-    Free(buf);
+    pclose(fp);
+#endif
 
     for (i = 0; i < NAPPS; i++)
         if (counts[i] > 0)
@@ -333,15 +284,20 @@ U0 ApplyUnholiness(I64 active)
     if (active <= 0)
         return;
 
-    holy_score -= 4 + (active - 1) * 2;
+    // SLOWER DRAIN: Drops by 1 point per cycle + 1 extra point per additional active app
+    holy_score -= 1 + (active - 1);
     if (holy_score < 0)
         holy_score = 0;
 }
 
 U0 RestoreHoliness()
 {
-    if (holy_score < MAX_HOLY)
-        holy_score++;
+    // FASTER RECOVERY: Gains 3 points per clean cycle instead of 1
+    if (holy_score < MAX_HOLY) {
+        holy_score += 3;
+        if (holy_score > MAX_HOLY)
+            holy_score = MAX_HOLY;
+    }
 }
 
 U0 DrawGrid()
@@ -423,14 +379,14 @@ U0 DrawMeter(I64 active)
     Print(C_RESET);
 
     if (active > 0) {
-        StrPrint(buf, "!! THEY ARE WATCHING  -  %d UNHOLY APP(S) DETECTED !!", active);
+        StrPrint(buf, sizeof(buf), "!! THEY ARE WATCHING  -  %d UNHOLY APP(S) DETECTED !!", active);
         Centered(16, C_BADBLINK, buf);
     }
 
     if (holy_score > 66)
-        Centered(17, C_GOOD, "STATUS: Pure Temple. God's lonely programmer smiles.");
+        Centered(17, C_GOOD, "STATUS: Pure Temple. Guard intact.");
     else if (holy_score > 33)
-        Centered(17, C_WARN, "STATUS: Terry Davis would not approve.");
+        Centered(17, C_WARN, "STATUS: Sanctity draining. Proceed with caution.");
     else
         Centered(17, C_BAD, "STATUS: Await your divine judgment!");
 }
@@ -478,7 +434,7 @@ U0 DrawStats(I64 active)
     Print("%d%%  ", lowest_score);
     Print(C_RESET);
 
-    Centered(22, C_DIM, "Ctrl+C to depart the temple  -  In memoriam: Terry A. Davis (1969-2018)");
+    Centered(22, C_DIM, "Ctrl+C to depart the temple");
 }
 
 U0 Render(I64 active)
@@ -525,7 +481,7 @@ U0 Purge()
             Print(C_RESET);
 
             MakeKey(key, unholy_apps[i]);
-            StrPrint(cmd, "pkill -9 -ix '%s' > /dev/null 2>&1", key);
+            StrPrint(cmd, sizeof(cmd), "pkill -9 -ix '%s' > /dev/null 2>&1", key);
             System(cmd);
 
             souls_smitten += counts[i];
