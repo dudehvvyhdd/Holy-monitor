@@ -14,11 +14,11 @@
 #include <time.h>
 
 typedef int64_t I64;
-typedef char    U8;
-typedef void    U0;
-typedef double  F64;
+typedef char U8;
+typedef void U0;
+typedef double F64;
 
-#define TRUE  1
+#define TRUE 1
 #define FALSE 0
 
 static void FixFmt(const char *in, char *out, size_t max)
@@ -121,9 +121,7 @@ static char *FileRead(const char *name, I64 *size)
         return NULL;
 
     fseek(f, 0, SEEK_END);
-
     n = ftell(f);
-
     rewind(f);
 
     if (n < 0) {
@@ -139,7 +137,6 @@ static char *FileRead(const char *name, I64 *size)
     }
 
     n = (long)fread(buf, 1, (size_t)n, f);
-
     buf[n] = '\0';
 
     fclose(f);
@@ -180,11 +177,8 @@ static void Cleanup(int sig)
 
 #endif
 
-
 #define MAX_HOLY     100
 #define METER_WIDTH  72
-
-/* Slower polling so the messages can actually be read. */
 #define POLL_TIME    1000
 
 #define WIN_X        2
@@ -195,12 +189,10 @@ static void Cleanup(int sig)
 #define NAPPS        24
 #define BAR_H        11
 
-
 #define PS_CMD \
     "ps -eo comm= > $HOME/.holymon.tmp 2>/dev/null"
 
 #define PS_FILE "~/.holymon.tmp"
-
 
 #define C_RESET      "\x1b[0m"
 #define C_BORDER     "\x1b[36;1m"
@@ -212,7 +204,6 @@ static void Cleanup(int sig)
 #define C_BAD        "\x1b[31;1m"
 #define C_BADBLINK   "\x1b[5;31;1m"
 #define C_WHITE      "\x1b[37;1m"
-
 
 U8 *unholy_apps[NAPPS] = {
     "chrome",
@@ -241,7 +232,6 @@ U8 *unholy_apps[NAPPS] = {
     "steam"
 };
 
-
 U8 *spark[8] = {
     "▁",
     "▂",
@@ -252,7 +242,6 @@ U8 *spark[8] = {
     "▇",
     "█"
 };
-
 
 I64 holy_score    = MAX_HOLY;
 I64 lowest_score  = MAX_HOLY;
@@ -266,7 +255,6 @@ I64 history[METER_WIDTH];
 
 U8 blank[WIN_W];
 
-
 I64 prev_user = 0;
 I64 prev_nice = 0;
 I64 prev_sys  = 0;
@@ -275,7 +263,6 @@ I64 prev_idle = 0;
 I64 cpu_pct = 0;
 I64 mem_pct = 0;
 I64 gpu_pct = 0;
-
 
 U0 At(I64 row, I64 col)
 {
@@ -286,7 +273,6 @@ U0 At(I64 row, I64 col)
     );
 }
 
-
 U0 Rep(U8 *s, I64 n)
 {
     I64 i;
@@ -295,14 +281,11 @@ U0 Rep(U8 *s, I64 n)
         Print("%s", s);
 }
 
-
 U0 ClearLine(I64 row)
 {
     At(row, 1);
-
     Print("%s", blank);
 }
-
 
 U0 Rule(
     I64 row,
@@ -318,7 +301,6 @@ U0 Rule(
     Print("%s", l);
 
     if (label) {
-
         Rep(fill, 2);
 
         Print("[ ");
@@ -333,9 +315,7 @@ U0 Rule(
             fill,
             WIN_W - 2 - 2 - 4 - StrLen(label)
         );
-
     } else {
-
         Rep(
             fill,
             WIN_W - 2
@@ -343,10 +323,8 @@ U0 Rule(
     }
 
     Print("%s", r);
-
     Print(C_RESET);
 }
-
 
 U0 Centered(
     I64 row,
@@ -361,10 +339,8 @@ U0 Centered(
 
     Print(color);
     Print("%s", text);
-
     Print(C_RESET);
 }
-
 
 U0 DrawSides()
 {
@@ -375,14 +351,12 @@ U0 DrawSides()
         r < WIN_H - 1;
         r++
     ) {
-
         At(r, 0);
 
         Print(C_BORDER);
         Print("║");
 
         Print(C_RESET);
-
         Print("%s", blank);
 
         Print(C_BORDER);
@@ -391,7 +365,6 @@ U0 DrawSides()
         Print(C_RESET);
     }
 }
-
 
 U0 DrawShell()
 {
@@ -438,7 +411,6 @@ U0 DrawShell()
     );
 }
 
-
 U0 DrawHeader()
 {
     Centered(
@@ -447,7 +419,6 @@ U0 DrawHeader()
         "TEMPLE NATIVE PROCESS GUARD & SYSTEM METRICS"
     );
 }
-
 
 U0 ReadHardwareMetrics()
 {
@@ -468,14 +439,12 @@ U0 ReadHardwareMetrics()
 
     U8 buf[256];
 
-
     f = fopen(
         "/proc/stat",
         "r"
     );
 
     if (f) {
-
         if (
             fscanf(
                 f,
@@ -486,13 +455,11 @@ U0 ReadHardwareMetrics()
                 &i
             ) == 4
         ) {
-
             total =
                 u +
                 n +
                 s +
                 i;
-
 
             diff_total =
                 total -
@@ -503,14 +470,11 @@ U0 ReadHardwareMetrics()
                     prev_idle
                 );
 
-
             diff_idle =
                 i -
                 prev_idle;
 
-
             if (diff_total > 0) {
-
                 cpu_pct =
                     100 *
                     (
@@ -519,7 +483,6 @@ U0 ReadHardwareMetrics()
                     ) /
                     diff_total;
             }
-
 
             prev_user = u;
             prev_nice = n;
@@ -530,14 +493,12 @@ U0 ReadHardwareMetrics()
         fclose(f);
     }
 
-
     f = fopen(
         "/proc/meminfo",
         "r"
     );
 
     if (f) {
-
         while (
             fgets(
                 buf,
@@ -545,7 +506,6 @@ U0 ReadHardwareMetrics()
                 f
             )
         ) {
-
             if (
                 sscanf(
                     buf,
@@ -554,7 +514,6 @@ U0 ReadHardwareMetrics()
                 ) == 1
             )
                 mem_total = u;
-
 
             if (
                 sscanf(
@@ -566,12 +525,9 @@ U0 ReadHardwareMetrics()
                 mem_avail = u;
         }
 
-
         fclose(f);
 
-
         if (mem_total > 0) {
-
             mem_pct =
                 100 *
                 (
@@ -582,7 +538,6 @@ U0 ReadHardwareMetrics()
         }
     }
 
-
     f = popen(
         "nvidia-smi "
         "--query-gpu=utilization.gpu "
@@ -591,9 +546,7 @@ U0 ReadHardwareMetrics()
         "r"
     );
 
-
     if (f) {
-
         if (
             fgets(
                 buf,
@@ -601,10 +554,7 @@ U0 ReadHardwareMetrics()
                 f
             )
         ) {
-
-            active =
-                atoi(buf);
-
+            active = atoi(buf);
 
             if (
                 active >= 0 &&
@@ -613,11 +563,9 @@ U0 ReadHardwareMetrics()
                 gpu_pct = active;
         }
 
-
         pclose(f);
     }
 }
-
 
 U0 DrawVerticalBars()
 {
@@ -627,116 +575,85 @@ U0 DrawVerticalBars()
     I64 lvl_gpu;
     I64 lvl_mem;
 
-
     lvl_cpu =
         cpu_pct *
         BAR_H /
         100;
-
 
     lvl_gpu =
         gpu_pct *
         BAR_H /
         100;
 
-
     lvl_mem =
         mem_pct *
         BAR_H /
         100;
 
-
     At(5, 78);
 
     Print(C_TITLE);
-
-    Print(
-        "CPU   GPU   RAM"
-    );
-
+    Print("CPU   GPU   RAM");
 
     for (
         h = 0;
         h < BAR_H;
         h++
     ) {
-
         I64 idx =
             BAR_H - 1 - h;
-
 
         At(
             6 + h,
             77
         );
 
-
         if (idx < lvl_cpu) {
-
             if (idx >= 8)
                 Print(C_BAD);
-
             else if (idx >= 4)
                 Print(C_WARN);
-
             else
                 Print(C_GOOD);
 
             Print("█ ");
-
         } else {
-
             Print(C_DIM);
             Print("░ ");
         }
 
-
         Print("   ");
-
 
         if (idx < lvl_gpu) {
-
             if (idx >= 8)
                 Print(C_BAD);
-
             else if (idx >= 4)
                 Print(C_WARN);
-
             else
                 Print(C_GOOD);
 
             Print("█ ");
-
         } else {
-
             Print(C_DIM);
             Print("░ ");
         }
 
-
         Print("   ");
 
-
         if (idx < lvl_mem) {
-
             if (idx >= 8)
                 Print(C_BAD);
-
             else if (idx >= 4)
                 Print(C_WARN);
-
             else
                 Print(C_GOOD);
 
             Print("█");
-
         } else {
-
             Print(C_DIM);
             Print("░");
         }
     }
-
 
     At(18, 76);
 
@@ -750,28 +667,23 @@ U0 DrawVerticalBars()
     );
 }
 
-
 U0 MatchApp(U8 *comm)
 {
     I64 i;
     I64 n;
-
 
     for (
         i = 0;
         i < NAPPS;
         i++
     ) {
-
         n =
             StrLen(
                 unholy_apps[i]
             );
 
-
         if (n > 15)
             n = 15;
-
 
         if (
             StrLen(comm) == n &&
@@ -781,14 +693,11 @@ U0 MatchApp(U8 *comm)
                 n
             ) == 0
         ) {
-
             counts[i]++;
-
             break;
         }
     }
 }
-
 
 I64 ScanProcesses()
 {
@@ -799,8 +708,7 @@ I64 ScanProcesses()
     I64 i;
     I64 n;
     I64 size;
-    I64 apps = 0;
-
+    I64 active_instances = 0;
 
     for (
         i = 0;
@@ -809,9 +717,7 @@ I64 ScanProcesses()
     )
         counts[i] = 0;
 
-
     System(PS_CMD);
-
 
     buf =
         FileRead(
@@ -819,126 +725,76 @@ I64 ScanProcesses()
             &size
         );
 
-
     if (!buf)
         return 0;
 
-
     p = buf;
 
-
     while (*p) {
-
         n = 0;
-
 
         while (
             *p &&
             *p != '\n'
         ) {
-
             if (n < 63) {
-
-                line[n] =
-                    *p;
-
+                line[n] = *p;
                 n++;
             }
 
             p++;
         }
 
-
         line[n] = 0;
-
 
         if (*p == '\n')
             p++;
 
-
         MatchApp(line);
     }
 
-
     Free(buf);
-
 
     for (
         i = 0;
         i < NAPPS;
         i++
-    ) {
+    )
+        active_instances += counts[i];
 
-        if (counts[i] > 0)
-            apps++;
-    }
-
-
-    return apps;
+    return active_instances;
 }
 
-
-/*
- * The meter drains in stages.
- *
- * Above 66%:
- *     Slow.
- *
- * 34-66%:
- *     Faster.
- *
- * 16-33%:
- *     Very fast.
- *
- * Below 16%:
- *     Extremely fast.
- *
- * The idea is that the system seems mostly fine,
- * then increasingly realizes that it absolutely
- * is not fine.
- */
 U0 ApplyUnholiness(I64 active)
 {
     I64 drain;
 
-
     if (active <= 0)
         return;
 
-
     if (holy_score > 66) {
-
-        drain =
-            1 +
-            (active / 3);
-
-    } else if (holy_score > 33) {
-
         drain =
             2 +
-            active;
-
-    } else {
-
+            (active / 2);
+    } else if (holy_score > 33) {
         drain =
-            4 +
+            3 +
+            active;
+    } else if (holy_score > 15) {
+        drain =
+            5 +
             (active * 2);
+    } else {
+        drain =
+            8 +
+            (active * 3);
     }
 
-
-    if (holy_score < 16)
-        drain +=
-            2 +
-            active;
-
-
     holy_score -= drain;
-
 
     if (holy_score < 0)
         holy_score = 0;
 }
-
 
 U0 RestoreHoliness()
 {
@@ -947,7 +803,6 @@ U0 RestoreHoliness()
     if (holy_score > MAX_HOLY)
         holy_score = MAX_HOLY;
 }
-
 
 U0 DrawActiveApps()
 {
@@ -958,13 +813,11 @@ U0 DrawActiveApps()
 
     I64 displayed = 0;
 
-
     for (
         i = 0;
         i < 15;
         i++
     ) {
-
         At(
             5 + i,
             2
@@ -975,24 +828,19 @@ U0 DrawActiveApps()
         );
     }
 
-
     for (
         i = 0;
         i < NAPPS;
         i++
     ) {
-
         if (counts[i] > 0) {
-
             At(
                 row,
                 4 + col * 22
             );
 
-
             Print(C_BADBLINK);
             Print("x ");
-
 
             Print(C_BAD);
 
@@ -1001,7 +849,6 @@ U0 DrawActiveApps()
                 unholy_apps[i]
             );
 
-
             Print(C_WARN);
 
             Print(
@@ -1009,21 +856,15 @@ U0 DrawActiveApps()
                 counts[i]
             );
 
-
             Print(C_RESET);
-
 
             displayed++;
 
             row++;
 
-
             if (row >= 19) {
-
                 row = 5;
-
                 col++;
-
 
                 if (col >= 3)
                     break;
@@ -1031,9 +872,7 @@ U0 DrawActiveApps()
         }
     }
 
-
     if (displayed == 0) {
-
         At(11, 22);
 
         Print(C_GOOD);
@@ -1046,7 +885,6 @@ U0 DrawActiveApps()
     }
 }
 
-
 U0 DrawMeter(I64 active)
 {
     I64 i;
@@ -1055,154 +893,101 @@ U0 DrawMeter(I64 active)
 
     U8 buf[128];
 
-
     filled =
         holy_score *
         METER_WIDTH /
         MAX_HOLY;
 
-
     At(22, 4);
 
     Print(C_LABEL);
-
-    Print(
-        "SANCTITY  "
-    );
-
+    Print("SANCTITY  ");
 
     Print(C_BORDER);
     Print("[");
-
 
     for (
         i = 0;
         i < METER_WIDTH;
         i++
     ) {
-
         if (i < filled) {
-
             if (
                 i * 3 <
                 METER_WIDTH
             )
                 Print(C_BAD);
-
             else if (
                 i * 3 <
                 METER_WIDTH * 2
             )
                 Print(C_WARN);
-
             else
                 Print(C_GOOD);
 
-
             Print("█");
-
         } else {
-
             Print(C_DIM);
             Print("░");
         }
     }
 
-
     Print(C_BORDER);
     Print("] ");
 
-
     if (holy_score == MAX_HOLY)
         Print(C_GOOD);
-
     else if (holy_score > 66)
         Print(C_GOOD);
-
     else if (holy_score > 33)
         Print(C_WARN);
-
     else
         Print(C_BADBLINK);
-
 
     Print(
         "%3d%%",
         holy_score
     );
 
-
     Print(C_RESET);
-
 
     At(22, 88);
 
-
     if (holy_score == MAX_HOLY)
-
-        Print(
-            C_GOOD "HOLY"
-        );
-
+        Print(C_GOOD "HOLY");
     else if (holy_score > 66)
-
-        Print(
-            C_DIM "OBSERVED"
-        );
-
+        Print(C_DIM "OBSERVED");
     else if (holy_score > 33)
-
-        Print(
-            C_WARN "THEY SEE YOU"
-        );
-
+        Print(C_WARN "THEY SEE YOU");
     else if (holy_score > 15)
-
-        Print(
-            C_BAD "CIA WATCH"
-        );
-
+        Print(C_BAD "CIA WATCH");
     else
-
-        Print(
-            C_BADBLINK "NO PRIVACY"
-        );
-
+        Print(C_BADBLINK "NO PRIVACY");
 
     At(23, 4);
 
     Print(C_LABEL);
-
-    Print(
-        "HISTORY   "
-    );
-
+    Print("HISTORY   ");
 
     Print(C_BORDER);
     Print(" ");
-
 
     for (
         i = 0;
         i < METER_WIDTH;
         i++
     ) {
-
         lvl =
             history[i] *
             7 /
             MAX_HOLY;
 
-
         if (history[i] > 66)
             Print(C_GOOD);
-
         else if (history[i] > 33)
             Print(C_WARN);
-
         else
             Print(C_BAD);
-
 
         Print(
             "%s",
@@ -1210,49 +995,37 @@ U0 DrawMeter(I64 active)
         );
     }
 
-
     Print(C_RESET);
-
 
     ClearLine(25);
     ClearLine(26);
 
-
     if (active > 0) {
-
         if (holy_score > 66) {
-
             StrPrint(
                 buf,
-                "They are watching. [%d active process(es)]",
+                "They are watching. [%d active process instance(s)]",
                 active
             );
-
         } else if (holy_score > 33) {
-
             StrPrint(
                 buf,
-                "The glowies have entered the process tree. [%d active process(es)]",
+                "The glowies have entered the process tree. [%d active process instance(s)]",
                 active
             );
-
         } else if (holy_score > 15) {
-
             StrPrint(
                 buf,
-                "CIA telemetry detected. [%d active process(es)]",
+                "CIA telemetry detected. [%d active process instance(s)]",
                 active
             );
-
         } else {
-
             StrPrint(
                 buf,
-                "THEY HAVE EYES ON THE SYSTEM. PURGE IMMINENT. [%d active process(es)]",
+                "THEY HAVE EYES ON THE SYSTEM. PURGE IMMINENT. [%d active process instance(s)]",
                 active
             );
         }
-
 
         Centered(
             25,
@@ -1261,49 +1034,32 @@ U0 DrawMeter(I64 active)
                 : C_WARN,
             buf
         );
-
-
     } else {
-
-        /*
-         * Terry references intentionally live only
-         * in the wholesome 100% and recovery states.
-         */
-
         if (holy_score == MAX_HOLY) {
-
             Centered(
                 25,
                 C_GOOD,
-                "God's lonely programmer is smiling. Terry would approve."
+                "God's lonely programmer is smiling."
             );
-
         } else if (holy_score > 75) {
-
             Centered(
                 25,
                 C_GOOD,
                 "Ring 0 is peaceful. The system is clean."
             );
-
         } else if (holy_score > 50) {
-
             Centered(
                 25,
                 C_WARN,
                 "Sanctity recovering. Terry's little machine would be proud."
             );
-
         } else if (holy_score > 25) {
-
             Centered(
                 25,
                 C_WARN,
                 "Foreign instruction sequences pending removal."
             );
-
         } else {
-
             Centered(
                 25,
                 C_BAD,
@@ -1313,25 +1069,18 @@ U0 DrawMeter(I64 active)
     }
 }
 
-
 U0 DrawStats(I64 active)
 {
     I64 up;
-
 
     up =
         tS -
         start_time;
 
-
     At(29, 4);
 
     Print(C_LABEL);
-
-    Print(
-        "UPTIME         "
-    );
-
+    Print("UPTIME         ");
 
     Print(C_WHITE);
 
@@ -1342,15 +1091,10 @@ U0 DrawStats(I64 active)
         up % 60
     );
 
-
     At(29, 38);
 
     Print(C_LABEL);
-
-    Print(
-        "ACTIVE TARGETS "
-    );
-
+    Print("ACTIVE TARGETS ");
 
     Print(C_WHITE);
 
@@ -1359,15 +1103,10 @@ U0 DrawStats(I64 active)
         active
     );
 
-
     At(29, 72);
 
     Print(C_LABEL);
-
-    Print(
-        "TOTAL PURGES   "
-    );
-
+    Print("TOTAL PURGES   ");
 
     Print(C_WHITE);
 
@@ -1376,15 +1115,10 @@ U0 DrawStats(I64 active)
         purge_count
     );
 
-
     At(30, 4);
 
     Print(C_LABEL);
-
-    Print(
-        "SMITTEN PROCS  "
-    );
-
+    Print("SMITTEN PROCS  ");
 
     Print(C_WHITE);
 
@@ -1393,15 +1127,10 @@ U0 DrawStats(I64 active)
         souls_smitten
     );
 
-
     At(30, 38);
 
     Print(C_LABEL);
-
-    Print(
-        "PEAK HERESY    "
-    );
-
+    Print("PEAK HERESY    ");
 
     Print(C_WHITE);
 
@@ -1410,15 +1139,10 @@ U0 DrawStats(I64 active)
         peak_heresy
     );
 
-
     At(30, 72);
 
     Print(C_LABEL);
-
-    Print(
-        "MIN SANCTITY   "
-    );
-
+    Print("MIN SANCTITY   ");
 
     Print(C_WHITE);
 
@@ -1427,93 +1151,50 @@ U0 DrawStats(I64 active)
         lowest_score
     );
 
-
     At(31, 4);
 
     Print(C_LABEL);
-
-    Print(
-        "LOAD STATE     "
-    );
-
+    Print("LOAD STATE     ");
 
     if (
         cpu_pct > 80 ||
         mem_pct > 80
     ) {
-
         Print(C_BAD);
-
-        Print(
-            "HEAVY SYSTEM LOAD"
-        );
-
+        Print("HEAVY SYSTEM LOAD");
     } else if (
         cpu_pct > 40 ||
         mem_pct > 40
     ) {
-
         Print(C_WARN);
-
-        Print(
-            "MODERATE ACTIVITY"
-        );
-
+        Print("MODERATE ACTIVITY");
     } else {
-
         Print(C_GOOD);
-
-        Print(
-            "NOMINAL OPERATIONAL"
-        );
+        Print("NOMINAL OPERATIONAL");
     }
-
 
     At(31, 38);
 
     Print(C_LABEL);
-
-    Print(
-        "MEMORY STATUS  "
-    );
-
+    Print("MEMORY STATUS  ");
 
     if (mem_pct > 85) {
-
         Print(C_BAD);
-
-        Print(
-            "RAM PRESSURE HIGH"
-        );
-
+        Print("RAM PRESSURE HIGH");
     } else {
-
         Print(C_GOOD);
-
-        Print(
-            "ALLOCATION CLEAN"
-        );
+        Print("ALLOCATION CLEAN");
     }
-
 
     At(31, 72);
 
     Print(C_LABEL);
-
-    Print(
-        "COMPILER MODE  "
-    );
-
+    Print("COMPILER MODE  ");
 
     Print(C_WHITE);
-
-    Print(
-        "HOLYC DIRECT"
-    );
-
+    Print("HOLYC DIRECT");
 
     Print(C_RESET);
-
 
     Centered(
         34,
@@ -1521,7 +1202,6 @@ U0 DrawStats(I64 active)
         "In memory of Terry A. Davis (1969-2018) -- An absolute legend."
     );
 }
-
 
 U0 Render(I64 active)
 {
@@ -1533,7 +1213,6 @@ U0 Render(I64 active)
     DrawStats(active);
 }
 
-
 U0 MakeKey(
     U8 *dst,
     U8 *name
@@ -1541,22 +1220,18 @@ U0 MakeKey(
 {
     I64 i = 0;
 
-
     while (
         name[i] &&
         i < 15
     ) {
-
         dst[i] =
             name[i];
 
         i++;
     }
 
-
     dst[i] = 0;
 }
-
 
 U0 Purge()
 {
@@ -1566,14 +1241,11 @@ U0 Purge()
     U8 cmd[128];
     U8 key[16];
 
-
     Print(
         "\x1b[2J"
     );
 
-
     DrawSides();
-
 
     Rule(
         0,
@@ -1583,7 +1255,6 @@ U0 Purge()
         "DIVINE PURGE IN PROGRESS"
     );
 
-
     Rule(
         WIN_H - 1,
         "╚",
@@ -1592,37 +1263,27 @@ U0 Purge()
         NULL
     );
 
-
     Centered(
         2,
         C_BADBLINK,
         "SMITING UNHOLY PROCESSES"
     );
 
-
     Sleep(300);
-
 
     for (
         i = 0;
         i < NAPPS;
         i++
     ) {
-
         if (counts[i] > 0) {
-
             At(
                 5 + line % 22,
                 6 + (line / 22) * 48
             );
 
-
             Print(C_BAD);
-
-            Print(
-                "[!] SMITTEN: "
-            );
-
+            Print("[!] SMITTEN: ");
 
             Print(C_WHITE);
 
@@ -1631,7 +1292,6 @@ U0 Purge()
                 unholy_apps[i]
             );
 
-
             Print(C_DIM);
 
             Print(
@@ -1639,15 +1299,12 @@ U0 Purge()
                 counts[i]
             );
 
-
             Print(C_RESET);
-
 
             MakeKey(
                 key,
                 unholy_apps[i]
             );
-
 
             StrPrint(
                 cmd,
@@ -1655,21 +1312,16 @@ U0 Purge()
                 key
             );
 
-
             System(cmd);
-
 
             souls_smitten +=
                 counts[i];
 
-
             line++;
-
 
             Sleep(120);
         }
     }
-
 
     Centered(
         30,
@@ -1677,16 +1329,12 @@ U0 Purge()
         "Unholy processes smitten. Ring 0 sanctity restored."
     );
 
-
     purge_count++;
-
 
     Sleep(1800);
 
-
     holy_score =
         MAX_HOLY;
-
 
     for (
         i = 0;
@@ -1696,22 +1344,18 @@ U0 Purge()
         history[i] =
             MAX_HOLY;
 
-
     Print(
         "\x1b[2J"
     );
-
 
     DrawShell();
     DrawHeader();
 }
 
-
 U0 HolyMon()
 {
     I64 i;
     I64 active;
-
 
     for (
         i = 0;
@@ -1720,11 +1364,9 @@ U0 HolyMon()
     )
         blank[i] = ' ';
 
-
     blank[
         WIN_W - 2
     ] = 0;
-
 
     for (
         i = 0;
@@ -1734,10 +1376,8 @@ U0 HolyMon()
         history[i] =
             MAX_HOLY;
 
-
     start_time =
         tS;
-
 
     Print(
         "\x1b[?1049h"
@@ -1746,16 +1386,12 @@ U0 HolyMon()
         "\x1b[H"
     );
 
-
     DrawShell();
     DrawHeader();
 
-
     while (TRUE) {
-
         active =
             ScanProcesses();
-
 
         if (
             active >
@@ -1764,13 +1400,10 @@ U0 HolyMon()
             peak_heresy =
                 active;
 
-
         if (active > 0)
             ApplyUnholiness(active);
-
         else
             RestoreHoliness();
-
 
         if (
             holy_score <
@@ -1778,7 +1411,6 @@ U0 HolyMon()
         )
             lowest_score =
                 holy_score;
-
 
         for (
             i = 0;
@@ -1788,26 +1420,21 @@ U0 HolyMon()
             history[i] =
                 history[i + 1];
 
-
         history[
             METER_WIDTH - 1
         ] =
             holy_score;
 
-
         Render(active);
-
 
         if (
             holy_score <= 0
         )
             Purge();
 
-
         Sleep(POLL_TIME);
     }
 }
-
 
 #ifndef HOLYC_NATIVE
 
@@ -1823,7 +1450,6 @@ int main(void)
         Cleanup
     );
 
-
     setvbuf(
         stdout,
         NULL,
@@ -1831,9 +1457,7 @@ int main(void)
         1 << 16
     );
 
-
     HolyMon();
-
 
     return 0;
 }
