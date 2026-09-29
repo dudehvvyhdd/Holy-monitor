@@ -11,7 +11,7 @@ System sanctity monitor written in HolyC. Monitors active system tasks for bloat
 Clone the repository and run the installer script:
 
 ```bash
-git clone https://github.com/ollipix/Holy-monitor.git
+git clone https://github.com/texivi/Holy-monitor.git
 cd Holy-monitor
 chmod +x install.sh
 ./install.sh
