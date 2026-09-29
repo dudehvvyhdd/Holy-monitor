@@ -1039,13 +1039,13 @@ U0 DrawMeter(I64 active)
             Centered(
                 25,
                 C_GOOD,
-                "God's lonely programmer is smiling."
+                "God's lonely programmer smile."
             );
         } else if (holy_score > 75) {
             Centered(
                 25,
                 C_GOOD,
-                "Ring 0 is peaceful. The system is clean."
+                "The system is clean."
             );
         } else if (holy_score > 50) {
             Centered(
@@ -1326,7 +1326,7 @@ U0 Purge()
     Centered(
         30,
         C_GOOD,
-        "Unholy processes smitten. Ring 0 sanctity restored."
+        "Unholy processes smitten. sanctity restored."
     );
 
     purge_count++;
